@@ -11,7 +11,7 @@ def train_model(model, train_loader, criterion, optimizer, device = 'cpu'):
     for i, (images, labels) in enumerate(train_loader):
         num_train += len(labels)
 
-        images, labels = images.view(1, 3, 256*256, -1).to(device), labels.to(device)
+        images, labels = images.view(64, 3, 256*256, -1).to(device), labels.to(device)
 
         optimizer.zero_grad()
 
@@ -28,7 +28,7 @@ def train_model(model, train_loader, criterion, optimizer, device = 'cpu'):
         optimizer.step()
 
         train_loss += loss.item()
-        if i == 100: break
+        if i == 10: break
     train_loss = train_loss / num_train
     train_accuracy = train_correct / num_train
 

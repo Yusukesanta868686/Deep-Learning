@@ -6,10 +6,11 @@ import torchvision
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 import torchvision.models as models
+from torch.utils.data import random_split
 import pandas as pd
 import os
 from load_images import CustomDataset
-from densenet import DenseNet
+#from densenet import DenseNet
 from tinymodel import Net
 from resnet import ResNet18
 from train import train_model
@@ -17,22 +18,21 @@ from test import test_model
 import matplotlib.pyplot as plt
 
 def main():
-    train_images = []
-    test_imageas = []
     train_dir = "state-farm-distracted-driver-detection/imgs/train"
-    test_dir = "state-farm-distracted-driver-detection"
 
     transform = transforms.Compose([
         transforms.Resize((256, 256)),
         transforms.ToTensor()
     ])
 
-    train_dataset = CustomDataset(train_dir, transform = transform, mode = 'train')
-    test_dataset = CustomDataset(test_dir, transform = transform, mode = 'test', csv_path = 'driver_imgs_list.csv')
-    
-    train_loader = DataLoader(train_dataset, batch_size = 1, shuffle = True)
-    test_loader = DataLoader(test_dataset, batch_size = 1, shuffle = True)
+    total_dataset = CustomDataset(train_dir, transform = transform, mode = 'train')
+    train_size = int(0.8 * len(total_dataset))
+    val_size = len(total_dataset) - train_size
 
+    train_dataset, val_dataset = random_split(total_dataset, [train_size, val_size]) 
+    
+    train_loader = DataLoader(train_dataset, batch_size = 64, shuffle = True)
+    val_loader = DataLoader(val_dataset, batch_size = 64, shuffle = True)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     #model = DenseNet(num_classes=10)
     #model = models.densenet169
@@ -45,18 +45,17 @@ def main():
     test_loss_list = []
     train_accuracy_list = []
     test_accuracy_list = []
-    print(123)
+    
     for epoch in range(num_epochs):
         train_loss, train_accuracy = train_model(model, train_loader, criterion, optimizer, device = device)
-        print(123)
         train_loss_list.append(train_loss)
         train_accuracy_list.append(train_accuracy)
-        test_loss, test_accuracy = test_model(model, test_loader, criterion, optimizer, device = device)
+        test_loss, test_accuracy = test_model(model, val_loader, criterion, optimizer, device = device)
         test_loss_list.append(test_loss)
         test_accuracy_list.append(test_accuracy)
         
         print(f'epochs: {epoch}, train_loss: {train_loss:.5f}, test_loss: {test_loss:.5f}, train accuracy: {train_accuracy:.5f}, test accuracy: {test_accuracy:.5f}')
-
+        #print(f'epochs: {epoch}, train_loss: {train_loss:.5f}, train_accuracy: {train_accuracy:.5f}')
     # Create figure and axis objects with a shared x-axis
     fig, ax1 = plt.subplots()
 
